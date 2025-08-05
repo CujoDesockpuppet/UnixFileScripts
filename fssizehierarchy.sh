@@ -39,8 +39,11 @@ find . -type d -print | while read dir; do
   if [[ "$toplevel_dir" != "$current_toplevel_dir" ]]; then
     # Print the headings if a new top-level directory is encountered
     printf "\n"
-    printf "%-13s %s\n" "Size(MB)" "Path"
-    printf "%-13s %s\n" "--------" "--------"
+    printf "Host = %s  Top Level Directory Structure = %s\n" "$HOSTNAME" "$scan_dir"
+   # printf "%-25s %s\n" "Host =" "$HOSTNAME"
+     printf "%-25s %s\n" "Directory Structure =" "$toplevel_dir"   
+# printf "%-13s %s\n" "Size(MB)     " "   Path"
+    printf "%-13s %s\n" "-------------" "   --------"
     # Update the current top-level directory
     current_toplevel_dir="$toplevel_dir"
   fi
