@@ -112,3 +112,13 @@ done
 echo "--------------------------------------------------------------------------"
 echo "Script finished. All output has been logged to: $LOG_FILE"
 echo "--------------------------------------------------------------------------"
+# Prompt the user to keep or delete the log file
+echo -e "\033[7mPlease choose to keep or remove the current log file.\033[0m"
+read -p "Do you want to keep the log file '$LOG_FILE'? (y/n): " keep_log 
+# Check the user's response and act accordingly
+if [[ "$keep_log" =~ ^[Nn]$ ]]; then 
+  rm "$LOG_FILE"  
+  echo "Log file deleted."
+else  
+  echo "Log file kept."
+fi
