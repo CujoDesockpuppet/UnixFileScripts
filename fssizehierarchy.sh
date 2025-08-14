@@ -9,11 +9,11 @@
 OS_NAME=$(uname)
 if [[ "$OS_NAME" == "LINUX" ]]; then
   echo "Running on Linux. Proceeding with script."
-#  exit 0
+#   exit 0
 fi
 if [[ "$OS_NAME" == "AIX" ]]; then
   echo "Running on AIX. Proceeding with script."
-#  exit 0
+#   exit 0
 fi
 
 # Define the log file name
@@ -39,7 +39,7 @@ read -p "Please enter the directory to scan: " scan_dir
 
 # If the scan_dir variable is empty, set it to the current directory
 if [[ -z "$scan_dir" ]]; then  
-   scan_dir="$HOME"
+    scan_dir="$HOME"
 fi
 
 # Add a leading slash if it's not present.
@@ -114,11 +114,33 @@ echo "Script finished. All output has been logged to: $LOG_FILE"
 echo "--------------------------------------------------------------------------"
 # Prompt the user to keep or delete the log file
 echo -e "\033[7mPlease choose to keep or remove the current log file.\033[0m"
-read -p "Do you want to keep the log file '$LOG_FILE'? (y/n): " keep_log 
-# Check the user's response and act accordingly
-if [[ "$keep_log" =~ ^[Nn]$ ]]; then 
-  rm "$LOG_FILE"  
-  echo "Log file deleted."
-else  
-  echo "Log file kept."
-fi
+
+# Loop until a valid response is given or the timeout is reached
+while true; do
+  # The -t 30 flag sets a 30-second timeout.
+  read -t 30 -p "Do you want to keep the log file '$LOG_FILE'? (y/n): " keep_log
+  
+  # Check the exit status of the read command to see if it timed out
+  if [[ $? -gt 128 ]]; then
+    echo -e "\nTimeout reached. Log file will be deleted."
+    rm "$LOG_FILE"
+    exit 0
+  fi
+  
+  # Convert the input to lowercase for easier comparison
+  keep_log=${keep_log,,}
+
+  # Check for a valid response (y or n)
+  if [[ "$keep_log" == "y" ]]; then
+    echo "Log file kept."
+    break # Exit the loop on a valid response
+  elif [[ "$keep_log" == "n" ]]; then
+    rm "$LOG_FILE"
+    echo "Log file deleted."
+    break # Exit the loop on a valid response
+  else
+    echo "Invalid input. Please answer with 'y' or 'n'."
+  fi
+done
+
+exit 0
