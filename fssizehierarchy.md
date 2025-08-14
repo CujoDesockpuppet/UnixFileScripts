@@ -1,155 +1,132 @@
+# File System Size Hierarchy Script
 
+## Overview
 
-## **Script Documentation: fssizehierarchy.sh**
+This script, `fssizehierarchy.sh`, is a Bash utility designed to recursively scan a specified directory, determine the size of all subdirectories, and present the information in a hierarchical format. It is a read-only script, so it does not modify any files or directories. The script's output is logged to a unique file in the user's home directory while also being displayed on the screen.
 
 ---
 
-This script, fssizehierarchy.sh, is designed to recursively scan a specified directory, calculate the size of each subdirectory, and present the output in a hierarchical, tree-like format. It's a read-only script that's compatible with both Linux and AIX operating systems.
+## Features
 
-### **Purpose**
+- **OS Detection**: Automatically detects if it's running on **Linux** or **AIX** and informs the user.
+- **Logging**: All script output is redirected to a timestamped log file (`fssizehierarchy_YYYYMMDD_HHMMSS.log`) in the user's home directory.
+- **User Prompts and Warnings**:
+    - Warns the user that running as the **root** user is recommended to avoid permission issues.
+    - Cautions that the process can be time-consuming on large file systems.
+    - Prompts the user to enter a directory path to scan.
+- **Input Handling**:
+    - If no directory is entered, it defaults to the user's home directory (`$HOME`).
+    - Automatically adds a leading slash (`/`) if one is missing.
+    - Removes any trailing slashes to ensure a consistent path format.
+- **Error Handling**:
+    - Checks if the specified directory exists and is a valid directory.
+    - If an error occurs, it prompts the user to decide whether to keep or delete the log file.
+    - The prompt to keep or delete the log file has a 30-second timeout, after which the log is automatically deleted.
 
-The primary goal of this script is to provide a clear, easy-to-read overview of disk space usage within a given directory structure. It helps users quickly identify large directories and understand the size distribution within a file system.
+---
 
-### **How it works**
+## Usage
 
-1. **OS Detection**: The script first checks the operating system (uname) to confirm if it's running on Linux or AIX.  
-2. **Logging**: All output from the script, including prompts, warnings, and the final size hierarchy, is saved to a timestamped log file in the user's home directory. The log file is also simultaneously displayed on the console.  
-3. **User Input**: The user is prompted to enter a directory path to scan. If no path is provided, the script defaults to the user's **HOME** directory.  
-4. **Path Validation**: The script validates the user-provided path, ensuring it exists and is a valid directory. It also performs some path normalization, like adding a leading slash if one is missing and removing any trailing slashes.  
-5. **Scanning and Formatting**: The script uses the find command to locate all subdirectories. For each directory found, it calculates its size in MB using du \-sm. It then formats the output to display the size and the full path with an indentation that represents the directory's depth, creating a clear hierarchy.  
-6. **Cleanup**: At the end of the script, the user is given the option to keep or delete the generated log file.
+1.  **Save the script**: Save the provided code into a file named `fssizehierarchy.sh`.
+2.  **Make it executable**: Open a terminal and run the following command:
+    ```bash
+    chmod +x fssizehierarchy.sh
+    ```
+3.  **Run the script**: Execute the script from the terminal.
+    ```bash
+    ./fssizehierarchy.sh
+    ```
+4.  **Enter the directory**: When prompted, enter the full path of the directory you wish to scan. For example:
+    ```
+    Please enter the directory to scan: /var/log
+    ```
+    If you just press **Enter**, the script will default to your home directory.
 
-### **Usage and Warnings**
+---
 
-* **Permissions**: It is highly recommended to run this script as the root user to avoid permission issues, which could prevent the script from accessing and scanning certain directories.  
-* **Performance**: Be aware that scanning very large file systems (e.g., /sap\_stage, /CP/interface) can be time-consuming. To optimize performance, it's best to specify a directory as deep as possible in the file system hierarchy.  
-* **Example**: To scan a specific directory like /sap\_stage/kfries, you would enter that path when prompted. The script would then focus its scan on that directory and its subdirectories.
+## Code
 
-### **Code Reference**
+```bash
+#!/bin/bash
+# Author: The Kevin
+# Find all directories recursively, then for each directory
+# print out with sizes and in a hierarchy.
 
-Bash
+# Because you may use globally mounted directories,
+# I want to make sure the user sees whether it's AIX or Linux.
 
-\#\!/bin/bash  
-\# Author: The Kevin   
-\# Find all directories recursively, then for each directory  
-\# print out with sizes and in a hierarchy.
-
-\# Because you may use globally mounted directories,   
-\# I want to make sure the user sees whether it's AIX or Linux.
-
-OS\_NAME=$(uname)  
-if \[\[ "$OS\_NAME" \== "LINUX" \]\]; then  
-  echo "Running on Linux. Proceeding with script."  
-\#   exit 0  
-fi  
-if \[\[ "$OS\_NAME" \== "AIX" \]\]; then  
-  echo "Running on AIX. Proceeding with script."  
-\#   exit 0  
+OS_NAME=$(uname)
+if [[ "$OS_NAME" == "LINUX" ]]; then
+  echo "Running on Linux. Proceeding with script."
+#   exit 0
+fi
+if [[ "$OS_NAME" == "AIX" ]]; then
+  echo "Running on AIX. Proceeding with script."
+#   exit 0
 fi
 
-\# Define the log file name  
-\# Use a timestamp to ensure the file is unique  
-LOG\_FILE="$HOME/fssizehierarchy\_$(date \+%Y%m%d\_%H%M%S).log"
+# Define the log file name
+# Use a timestamp to ensure the file is unique
+LOG_FILE="$HOME/fssizehierarchy_$(date +%Y%m%d_%H%M%S).log"
 
-\# Redirect all script output to the log file and stdout  
-exec \> \>(tee "$LOG\_FILE") 2\>&1
+# Redirect all script output to the log file and stdout
+exec > >(tee "$LOG_FILE") 2>&1
 
-\# Obligatory usage warnings  
-  echo "--------------------------------------------------------------------------"   
-  echo "This is a read-only script, you may want to be root user when running"  
-  echo "to eliminate permissions issues on the files and directories scanned."  
-  echo "--------------------------------------------------------------------------"  
-  echo "Directory input defaults to user's HOME directory, so be careful as root"  
-  echo "Please note that this could take a lot of time on huge filesystems"  
-  echo "such as /sap\_stage/xxx or /CP/interface/ so qualify the name as much as possible."  
-  echo "EG: /sap\_state/kfries or /CP/interface/HUP/fake/directory/ "  
+# Obligatory usage warnings
+  echo "--------------------------------------------------------------------------"
+  echo "This is a read-only script, you may want to be root user when running"
+  echo "to eliminate permissions issues on the files and directories scanned."
+  echo "--------------------------------------------------------------------------"
+  echo "Directory input defaults to user's HOME directory, so be careful as root"
+  echo "Please note that this could take a lot of time on huge filesystems"
+  echo "such as /sap_stage/xxx or /CP/interface/ so qualify the name as much as possible."
+  echo "EG: /sap_state/kfries or /CP/interface/HUP/fake/directory/ "
   echo "--------------------------------------------------------------------------"
 
-\# Prompt the user for a directory path and store it in a variable  
-read \-p "Please enter the directory to scan: " scan\_dir
+# Prompt the user for a directory path and store it in a variable
+read -p "Please enter the directory to scan: " scan_dir
 
-\# If the scan\_dir variable is empty, set it to the current directory  
-if \[\[ \-z "$scan\_dir" \]\]; then    
-    scan\_dir="$HOME"  
+# If the scan_dir variable is empty, set it to the current directory
+if [[ -z "$scan_dir" ]]; then
+    scan_dir="$HOME"
 fi
 
-\# Add a leading slash if it's not present.  
-if \[\[ \! "$scan\_dir" \== /\* \]\]; then  
-  scan\_dir="/$scan\_dir"  
+# Add a leading slash if it's not present.
+if [[ ! "$scan_dir" == /* ]]; then
+  scan_dir="/$scan_dir"
 fi
 
-\# Strip a trailing slash if it's present.  
-scan\_dir="${scan\_dir%/}"
+# Strip a trailing slash if it's present.
+scan_dir="${scan_dir%/}"
 
-\# Check if the entered directory exists and is a directory  
-if \[\[ \! \-d "$scan\_dir" \]\]; then  
-  echo "Error: Directory '$scan\_dir' does not exist or is not a directory. Exiting."  
-  exit 1  
-fi
+# Check if the entered directory exists and is a directory
+if [[ ! -d "$scan_dir" ]]; then
+  echo "Error: Directory '$scan_dir' does not exist or is not a directory. Exiting."
+"fssizehierarchy.sh" 146 lines, 5451 characters
+  # The -t 30 flag sets a 30-second timeout.
+  read -t 30 -p "Do you want to keep the log file '$LOG_FILE'? (y/n): " keep_log
 
-\# Store the full path of the scan directory for later use  
-full\_scan\_dir="$scan\_dir"
-
-\# Change to the user-specified directory  
-cd "$scan\_dir" || exit 1
-
-\# Initialize a variable to keep track of the current top-level directory  
-current\_toplevel\_dir=""
-
-find . \-type d \-print | while read dir; do  
-  \# Determine the top-level directory for the current path.  
-  \# We use \`sed\` to remove the leading \`./\` and then \`cut\` to get the first component.  
-  toplevel\_dir=$(echo "$dir" | sed 's/^\\.\\///' | cut \-d'/' \-f1)
-
-  \# Check if the top-level directory has changed  
-  if \[\[ "$toplevel\_dir" \!= "$current\_toplevel\_dir" \]\]; then  
-    \# Print the headings if a new top-level directory is encountered  
-    printf "\\n"  
-    printf "Host \= %s  Top Level Directory Structure \= %s\\n" "$HOSTNAME" "$full\_scan\_dir"  
-    printf "%-25s %s\\n" "Directory Structure \=" "$toplevel\_dir"     
-    printf "%-13s %s\\n" "-------------" "  \--------"  
-    \# Update the current top-level directory  
-    current\_toplevel\_dir="$toplevel\_dir"  
+  # Check the exit status of the read command to see if it timed out
+  if [[ $? -gt 128 ]]; then
+    echo -e "\nTimeout reached. Log file will be deleted."
+    rm "$LOG_FILE"
+    exit 0
   fi
 
-  \# Get the directory size in MB. Use 'du \-sm' for KB on AIX.  
-  size=$(du \-sm "$dir" | awk '{print $1}')  
-    
-  \# Check if the size is a non-zero value.  
-  if \[\[ "$size" \!= "0.00" \]\]; then  
-    \# Construct the full path manually, as 'readlink' is not available.  
-    \# We append the relative path from 'find' to the user's base directory.  
-    \# We use 'sed' to remove the './' prefix if it exists to avoid double slashes.  
-    relative\_path=$(echo "$dir" | sed 's/^\\.\\///')  
-    full\_path="${full\_scan\_dir}/${relative\_path}"
+  # Convert the input to lowercase for easier comparison
+  keep_log=${keep_log,,}
 
-    \# Determine the depth of the directory  
-    \# We now base the depth on the manually constructed full path  
-    depth=$(echo "$full\_path" | awk \-F'/' '{print NF-1}')  
-      
-    \# Calculate the indentation based on the base directory's depth.  
-    base\_depth=$(echo "$full\_scan\_dir" | awk \-F'/' '{print NF-1}')  
-    indentation=$(( (depth \- base\_depth) \* 2 ))  
-      
-    \# Use printf to create the indentation  
-    indent\_spaces=$(printf "%\*s" "$indentation" "")
-
-    \# Format the output with right-aligned decimal numbers and the full path  
-    printf "%13.2f\\t%s%s\\n" "$size" "$indent\_spaces" "$full\_path"  
-  fi  
+  # Check for a valid response (y or n)
+  if [[ "$keep_log" == "y" ]]; then
+    echo "Log file kept."
+    break # Exit the loop on a valid response
+  elif [[ "$keep_log" == "n" ]]; then
+    rm "$LOG_FILE"
+    echo "Log file deleted."
+    break # Exit the loop on a valid response
+  else
+    echo "Invalid input. Please answer with 'y' or 'n'."
+  fi
 done
 
-\# Inform the user that the output has been logged  
-echo "--------------------------------------------------------------------------"  
-echo "Script finished. All output has been logged to: $LOG\_FILE"  
-echo "--------------------------------------------------------------------------"  
-\# Prompt the user to keep or delete the log file  
-echo \-e "\\033\[7mPlease choose to keep or remove the current log file.\\033\[0m"  
-read \-p "Do you want to keep the log file '$LOG\_FILE'? (y/n): " keep\_log   
-\# Check the user's response and act accordingly  
-if \[\[ "$keep\_log" \=\~ ^\[Nn\]$ \]\]; then   
-  rm "$LOG\_FILE"    
-  echo "Log file deleted."  
-else    
-  echo "Log file kept."  
-fi  
+exit 0
