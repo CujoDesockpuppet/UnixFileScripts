@@ -1,111 +1,101 @@
-Global Ownership Change Script (change_ownership.sh)
-This robust shell script is designed to safely and globally update the owner and group of files and directories within a specified target path. It functions by first identifying objects that match a specific source owner and group combination, and then applying the new ownership to only those matching objects.
+Global Ownership and Group Change Script Documentation
+This script, change_ownership.sh, is a robust Bourne shell script designed to recursively find files and directories within a specified path that currently match a source owner/group combination and change their ownership to a new target owner/group. It incorporates critical safety checks, interactive input, and a tiered execution menu.
 
-The script prioritizes safety by requiring a mandatory test listing phase before execution and provides a clear, detailed log of all actions.
+🚀 Key Features
+Global Recursive Change: Uses the find and chown commands to modify ownership for all matching files and directories under a specified target directory.
 
-1. Compatibility
-This script is designed for maximum compatibility across various Unix-like operating systems:
+Source Matching: Changes are only applied to files and directories that currently possess the specified source owner and group.
 
-Linux (Modern and POSIX-compatible systems)
+Mandatory Root Check: The script strictly enforces execution with root privileges, ensuring the necessary authority to modify file ownership.
 
-AIX (Includes specific logic for temporary file handling)
+Safety Menu: Provides a critical selection menu with options for Test Listing Only, Execute Changes Only, or Both, allowing for verification before applying irreversible changes.
 
-Most other Unix variants
+Detailed Logging: A unique, timestamped log file (ownership_change_YYYYMMDD_HHMMSS.log) is created to record the paths of all files found during the test listing phase.
 
-2. Prerequisites
-Root Access: The script must be executed as the root user ($EUID check).
+Cross-Platform Compatibility: Designed to work on both AIX and Linux systems using standard shell features.
 
-Essential Utilities: Requires bash, find, chown, tee, and wc.
+📋 Prerequisites
+Operating System: Linux or AIX.
 
-3. Usage
-Save the script: Save the code as change_ownership.sh.
+Permissions: You must have root user privileges to run this script successfully, as ownership changes require elevated access.
 
-Set permissions: Make the script executable:
+🛠️ Usage
+1. Execution
+Execute the script from the command line, ensuring you use the appropriate method for root access:
 
-chmod +x change_ownership.sh
+Environment
 
-Run as root: Execute the script using sudo or by switching to the root user:
+Command
+
+Linux
 
 sudo ./change_ownership.sh
 
-4. Interactive Prompts
-The script will guide you through four main inputs:
+AIX
 
-Input
+./change_ownership.sh (Requires being logged in as root)
 
-Description
+2. Interactive Prompts
+The script will guide you through the necessary inputs:
 
-Example
+Target Directory: The starting path for the recursive operation (e.g., /var/www/html).
 
-Target Directory
+Source OWNER & Source GROUP: The existing owner and group combination to look for and match.
 
-The top-level path where the changes will occur. (e.g., /var/www/html)
+Target (new) OWNER & Target (new) GROUP: The desired new owner and group to be applied to the matching files (e.g., www-data and app-users).
 
-/opt/data/app
+3. Execution Mode Selection
+After providing the details, select one of the following options from the Execution Menu:
 
-Source OWNER
-
-The current owner to match against.
-
-olduser
-
-Source GROUP
-
-The current group to match against.
-
-oldgroup
-
-Target (new) OWNER
-
-The new owner to assign to matching files.
-
-newuser
-
-Target (new) GROUP
-
-The new group to assign to matching files.
-
-newgroup
-
-5. Execution Modes
-After providing the ownership details, you must select an execution mode from the menu:
-
-Option
+Choice
 
 Mode
 
-Action Performed
+Action Taken
 
 1
 
 Test Listing ONLY
 
-Runs the find command and writes all matched paths to the log file. No actual ownership changes are made.
+Lists all matching file paths to the terminal and the log file. No ownership changes are performed.
 
 2
 
-Test and Execute
+Execute Changes ONLY
 
-(Recommended) Performs the test listing first, displays the count, prompts for final confirmation, and then applies chown to the listed files.
+Skips the listing and proceeds directly to apply the ownership changes after a final confirmation.
 
 3
 
+Both
+
+Performs the test listing first, and then executes the ownership change after a confirmation prompt.
+
+4
+
 Cancel
 
-Exits the script immediately without making any changes.
+Exits the script immediately.
 
-6. Safety and Logging Features
-Logging
-All output, including the files found and any execution errors, is appended to a time-stamped log file in the current directory, named in the format:
-ownership_change_YYYYMMDD_HHMMSS.log
+⚙️ Technical Logic
+A. Root User Check
+The script immediately verifies the user ID:
 
-Core Safety Checks
-Root Requirement: Ensures the script has the necessary permissions to change ownership.
+if [ "$EUID" -ne 0 ]; then
+    # Error message and exit
+    exit 1
+fi
 
-Directory Validation: Checks that the provided target directory exists before proceeding.
+B. Ownership Specification
+The target owner and group are combined into a single variable for the chown command:
 
-Symlink Exclusion: The find command explicitly uses ! -type l to skip soft links (symlinks), preventing unintended changes to files outside the target directory structure.
+OWNERSHIP_SPEC="${TARGET_OWNER}:${TARGET_GROUP}"
 
-Graceful Exit: If the Test Listing phase finds zero matching files, the script prints an informative success message and exits immediately (exit 0), preventing unnecessary execution flow.
+C. Core Change Command
+The core logic uses the efficient -exec ... {} + structure to minimize the number of chown processes executed, speeding up large operations:
 
-Confirmation: When running the "Test and Execute" option, a final confirmation prompt is required before the chown operation is run.
+find "$TARGET_DIR" -owner "$SOURCE_OWNER" -group "$SOURCE_GROUP" -exec chown "$OWNERSHIP_SPEC" {} + 2>&1
+
+2>&1: Redirects both standard output and standard error (including permissions denied errors) to the console.
+
+The find command locates all files and directories beneath $TARGET_DIR that match both the -owner and -group criteria.
